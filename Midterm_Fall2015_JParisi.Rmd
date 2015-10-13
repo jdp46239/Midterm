@@ -52,7 +52,6 @@ You are asked to analyze data from a New York City school voucher experiment tha
 
 ```{r warning=FALSE, message=FALSE}
 library(dplyr)
-library(sm)
 ```
 
 ```{r eval=TRUE}
@@ -161,28 +160,34 @@ legend("topright",c("Received Voucher", "No Voucher"), fill=c(rgb(0,0,1,1/4),rgb
 
 4. (4 points) In no more than 2-3 sentences, describe what your visualization in 1.C indicates about these data. Do the treatment and control groups appear to be similar (in terms of reading pre-test scores)? Why or why not? 
 
-Yes, the distributions appear to be similar. The fact that there are more students in the Treatment group needs to be taken into consideration when viewing the histogram. The shape of the distributions themselves looks very similar. 
+The fact that there are more students in the Treatment group needs to be taken into consideration when viewing the histograms. However, accounting for sample size, the distributions appear to share a very similar shape. Therefore there is reason to believe that the assignment to treatment and control groups was random. 
 
 5. (4 points) Typically, policy experiments such as the NYC school voucher lottery experiment are indended to produce statistical evidence that can then be generalized to broader policy applications (i.e., how might vouchers influence educational outcomes for other students who weren't part of the original experiment). Based on the reading pre-test scores that you visualized in C, describe any concerns you might have about our ability to generalize the results of this experiment to ALL elementary school students in the United States in no more than 2-3 sentences. 
 
-The bulk of the scores in this sample is concentrated in the lowest quartile for all students in the US (presumably). The overall average among elementary students should be at the 50th percentile. Therefore this is not likely a representative sample.
+The bulk of the scores in this sample is concentrated in the lowest quartile for all students (presumably in the US). The overall average among elementary students should be centered around the 50th percentile, assuming an approximately normal distribution. Therefore, this is not likely a representative sample.
 
 6. (4 points) What is the probability that a randomly selected student in the dataset received a voucher and scored above the 50th percentile on the math pre-test?
 
 ```{r}
-(nrow(Trt)/nrow(cleandata4))*(sum(cleandata4$y0_math_percentile>50)/nrow(cleandata4))
+sum(Trt$y0_math_percentile>50)/nrow(cleandata4)
 ```
+The probability that a randomly selected student in the dataset received a voucher and scored above the 50th percentile on the math pre-test is `r round(sum(Trt$y0_math_percentile>50)/nrow(cleandata4), 3)`. 
+
+The call to sum(Trt$y0_math_percentile>50) gives the total number of desired observations and nrow(cleandata4) is the overall sample size (voucher and non-voucher).
+
 7. (4 points) What is the probability that a randomly selected student who received a voucher group scored above the 50th percentile on the math pre-test?
 
 ```{r}
-sum(Trt$y0_math_percentile>50)/nrow(cleandata4)
+sum(Trt$y0_math_percentile>50)/nrow(Trt)
 ```
+
+The probability that a randomly selected student who received a voucher group scored above the 50th percentile on the math pre-test is `r round(sum(Trt$y0_math_percentile>50)/nrow(Trt), 3)`. In this case the sample size or denominator is is the group of students receiving a voucher only.
 
 8. (4 points) We are interested in studying whether the change in math scores after one year is different for students who receive a voucher versus those who do not. Write the null and alternative hypotheses in words and then using symbols.
 
 Null: After one year, the change in math scores for students receiving a voucher (Treatment) will be no different from those not receiving a voucher (Control).
 
-Alternative: After one year, the change in math scores for students receiving a voucher(Treatment) will be different from those not receiving a voucher (Control).
+Alternative: After one year, the change in math scores for students receiving a voucher (Treatment) will be different from those not receiving a voucher (Control).
 
 With "mu" representing the average change in test scores for each group:
 
@@ -240,11 +245,11 @@ Based on the p-value below 0.005 in the test above, we can conclude with 99% con
 
 14. (4 points) Explain how you could evaluate the hypothesis above using a confidence interval instead of a p-value.
 
-The data being tested represents for each observation the difference between percentile score at year 1 vs year 0 "i.e. year 1 score - year 0 score".  The t-test is attempting to estimate the population mean based on our sample data.  The confidence interval provided by R gives a range of 0.94 to 4.55, with a specified confidence level of 99%. Since 0 does not fall within the confidence interval, we can conclude with 99% confidence that the scores have changed (the mean change in score is greater than 0).
+The data being tested represents for each observation the difference between percentile score at year 1 vs year 0 (i.e. year 1 score - year 0 score).  The t-test evaluates whether the population mean (score difference) is equal to zero based on our sample data, and provides a confidence interval for an estimate of the population mean.  The confidence interval provided by R gives a range of 0.94 to 4.55, with a specified confidence level of 99%. Since 0 does not fall within the confidence interval, we can conclude with 99% confidence that the scores have changed (i.e. the mean change in score is different from 0).
 
 15. (2 points) Interpret the confidence interval you estimated for question N in a sentence.
 
-We are 99% confident that the mean change in reading percentile among the Treatment group students from the pre-test to year 1 scores is between 0.94 and 4.55.
+We are 99% confident that the mean change in reading percentile among the Treatment group students from the pre-test to year 1 scores is between 0.94 and 4.55 percentage points.
 
 16. (8 points) Perform a test of whether the average math pre-test score differs by grade level at $\alpha = 0.10$ significance level. Write out your hypothesis in symbols, perform the test, and then report your findings in a complete sentence.
 
@@ -257,9 +262,10 @@ unique(cleandata4$Grade)
 cleandata5<-filter(cleandata4,Grade!="0", Grade!="-7", !is.na(Grade))
 ```
 
-Since grade -7 makes no sense, we will drop these records, as well as those with grade = NA and grade = 0 (only 3 observations for grade =0). We can use an ANOVA test to answer this question, testing whether any of the means (pre-test scores by grade) are different or if all are the same. The null hypothesis is that all the means are the same.
+Since grade -7 makes no sense, we will drop these records, as well as those with grade = NA and grade = 0 (only 3 observations for grade =0). We can then use an ANOVA test to answer this question, testing whether any of the means (pre-test scores by grade) are different or if all are the same. The null hypothesis is that all the means are the same.
 
 $H_0: \mu_1 = \mu_2 = \mu_3 = \mu_4 = \mu_5$
+
 $H_A:$ At least one of the means is different
 
 ```{r}
@@ -280,7 +286,28 @@ Based on our p-value below 0.005 we can conclude with 99% confidence that the pr
 
 18. (6 points) Make a boxplot that compares the distribution of math scores between the pre-test and year 1 post-test for all students. Do your best to make the figure "publishable" by giving it clear axis titles, legend labels, and other aesthetic improvements. In no more than 2-3 sentences, describe how your figure supports (or does not support) your finding from question 17.
 
+```{r aachunk, warning=FALSE}
+library(ggplot2)
+
+students<-c(cleandata4$Student_ID, cleandata4$Student_ID)
+percentile<-c(cleandata4$y0_math_percentile, cleandata4$y1_math_percentile)
+testyear<-as.factor(c(rep(0, 1455), rep(1,1455)))
+boxdata<-data.frame(students, testyear, percentile)
+ggplot(boxdata,aes(x=as.factor(testyear),y=percentile)) + geom_boxplot() +xlab("Time of Test (Years)") +ylab("Math Percentile")
+```
+
+The box plot is not the best visualization to address question #17, as the passing mark of 50% is well into the upper quartile of the data. However, the plot does show improvement in scores from pre-test to the year 1 test. Also, fewer of the passing scores are plotted as outliers. 
+
 19. (4 points) Consider the correlation between math percentile and reading percentile for year 1 test scores. Compute Pearson’s `r` between these two variables. Is the correlation higher or lower than you would have expected? 
+
+```{r}
+cor(x=cleandata4$y1_read_percentile, y=cleandata4$y1_math_percentile, method="pearson")
+```
+The correlation of roughly 0.62 is perhaps slightly lower than I would have expected, as the intelligence and family educational stewardship of each child should have strong effects on both scores for each student. However, the magnitude of the correlation is not altogether surprising, since students have different aptitudes for reading and math.
 
 20. (6 points) You might argue that percentiles are actually rank-order data and not ratio-level data. For rank-order data, a more appropriate correlation measure is Spearman’s $\rho$, which is a rank correlation. Compute $\rho$ and contrast the results from $r$ (for question S above). Why do the results differ?
 
+```{r}
+cor(x=cleandata4$y1_read_percentile, y=cleandata4$y1_math_percentile, method="spearman")
+```
+The Spearman coefficient is approximately 0.58. The results differ because the Pearson coefficient is testing the linear relationship between the test scores, while the Spearman coefficient is testing the relationship between the rank ordered test scores in each group.
